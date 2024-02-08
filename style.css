@@ -1,17 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 
 * {
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
-ul {
+nav ul {
     background-color: #eee;
     list-style-type: none;
     overflow: hidden;
     padding: 0;
 }
 
-li {
+nav li {
     float: right;
 }
 
