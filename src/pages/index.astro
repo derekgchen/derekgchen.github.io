@@ -37,7 +37,8 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
       <p class="label">Updated {recentlyUpdated}</p>
     </div>
     <ul>
-      {recently.map((line) => <li set:html={line} />)}
+      {/* One span per line, so text and links stay together beside the arrow. */}
+      {recently.map((line) => <li><span set:html={line} /></li>)}
     </ul>
   </section>
 </Layout>
