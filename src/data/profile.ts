@@ -1,4 +1,6 @@
-// TODO: replace paper titles with the real ones from OpenReview.
+/** My name as it appears in author lists; it's highlighted where listed. */
+export const me = 'Derek Chen';
+
 export const papers = [
   {
     /** Anchor id; experience bullets refer to papers by it. */
@@ -9,16 +11,18 @@ export const papers = [
     venue: 'ICML GenBio',
     /** Optional distinction, e.g. Spotlight or Oral. */
     honor: 'Spotlight',
-    title: 'Permutation-invariant, solvent-aware protein structure diffusion',
-    url: 'https://openreview.net/forum?id=AJXT4TNXKN',
+    title: 'Generative Modeling of Solvated Biomolecules',
+    authors: ['MinGyu Choi', 'Derek Chen', 'Gloria Ma', 'Tommi Jaakkola', 'Regina Barzilay'],
+    url: 'https://openreview.net/forum?id=kIe6nCvXzA',
   },
   {
     id: 'ribosome-model',
     experience: 'barzilay-group',
     year: '2025',
     venue: 'ICML GenBio',
-    title: 'A variable-length, ribosome-inspired protein generative model',
-    url: 'https://openreview.net/forum?id=kIe6nCvXzA',
+    title: 'Protein Generator with Ribosomal Origin and Folding',
+    authors: ['MinGyu Choi', 'Derek Chen', 'Tommi Jaakkola', 'Regina Barzilay'],
+    url: 'https://openreview.net/forum?id=AJXT4TNXKN',
   },
 ];
 

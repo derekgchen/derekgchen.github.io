@@ -4,7 +4,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Timeline from '../../components/Timeline.astro';
 import { experiences, experiencePages } from '../../data/experience';
-import { papers, awards } from '../../data/profile';
+import { papers, awards, me } from '../../data/profile';
 import { dateRange, entryDates, byListOrder } from '../../lib/dates';
 
 export function getStaticPaths() {
@@ -38,6 +38,11 @@ const workAnchor = (paperId: string) => `work-${paperId}`;
           {papers.map((p) => (
             <li id={pubAnchor(p.id)}>
               <a href={p.url} target="_blank" class="pub-title">{p.title}</a>
+              <p class="pub-authors">
+                {p.authors.map((a, i) => (
+                  <>{i > 0 && ', '}{a === me ? <strong class="me">{a}</strong> : a}</>
+                ))}
+              </p>
               <p class="pub-venue">
                 {p.venue} {p.year}{'honor' in p && <span class="honor"> · {p.honor}</span>}
                 {p.experience && <a class="pub-lab" href={`#${workAnchor(p.id)}`}>{orgOf(p.experience)} ↓</a>}
@@ -268,7 +273,10 @@ const workAnchor = (paperId: string) => `work-${paperId}`;
   .pub-title::after { content: ' ↗'; color: var(--muted); font-weight: 400; }
   .pub-title:hover { color: var(--accent); }
 
-  .pub-venue { margin-top: 4px; font-size: 14px; color: var(--accent); }
+  .pub-authors { margin-top: 4px; font-size: 14px; color: var(--muted); }
+  .pub-authors .me { color: var(--accent); font-weight: 600; }
+
+  .pub-venue { margin-top: 2px; font-size: 14px; color: var(--accent); }
   .honor { font-weight: 600; }
 
   /* Link down to the position a paper came from. */
