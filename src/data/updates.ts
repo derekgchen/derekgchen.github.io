@@ -5,3 +5,6 @@ export const recently: string[] = [
   'Wrapping up my M.Eng.',
   'Planning my move to the Bay for the spring.',
 ];
+
+/** When the lines above were last revised; update it whenever you edit them. */
+export const recentlyUpdated = 'October 2026';

@@ -3,7 +3,7 @@ import { Image } from 'astro:assets';
 import profilePic from '../assets/website_pic_2.png';
 import Layout from '../layouts/Layout.astro';
 import { experiences } from '../data/experience';
-import { recently } from '../data/updates';
+import { recently, recentlyUpdated } from '../data/updates';
 
 // Organization websites, from the Experience data.
 const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
@@ -32,7 +32,10 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
   </section>
 
   <section class="recent">
-    <h2 class="label">Recently</h2>
+    <div class="recent-head">
+      <h2 class="label">Recently</h2>
+      <p class="label">Updated {recentlyUpdated}</p>
+    </div>
     <ul>
       {recently.map((line) => <li set:html={line} />)}
     </ul>
@@ -67,13 +70,26 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
     margin-top: 64px;
   }
 
-  .recent h2 { margin-bottom: 10px; font-weight: 400; letter-spacing: 0.04em; }
+  .recent-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+
+  .recent h2 { font-weight: 400; letter-spacing: 0.04em; }
   .recent ul { list-style: none; font-size: 17px; }
   .recent li + li { margin-top: 6px; }
 
+  /* Arrow bullet, with wrapped lines aligned to the text. */
+  .recent li {
+    display: flex;
+    gap: 10px;
+  }
+
   .recent li::before {
     content: '→';
-    margin-right: 10px;
     color: var(--accent);
   }
 
