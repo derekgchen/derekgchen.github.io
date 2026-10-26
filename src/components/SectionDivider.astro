@@ -1,0 +1,36 @@
+<div class="section-divider reveal">
+  <div class="section-divider-line"></div>
+  <div class="section-divider-dot"></div>
+  <div class="section-divider-line"></div>
+</div>
+
+<style>
+  .section-divider {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 60px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-divider-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+
+  @media (max-width: 900px) {
+    .section-divider { padding: 0 32px; }
+  }
+</style>

@@ -1,0 +1,75 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import SectionDivider from '../components/SectionDivider.astro';
+import Section from '../components/Section.astro';
+import CourseGroup from '../components/CourseGroup.astro';
+import ActivityCard from '../components/ActivityCard.astro';
+import { courseGroups } from '../data/courses';
+import { activities } from '../data/activities';
+---
+
+<Layout>
+  <Hero />
+
+  <SectionDivider />
+
+  <Section
+    id="school"
+    num="01"
+    title="Academic"
+    accent="Work"
+    intro="Below are some of the courses I've taken in my time here at MIT."
+  >
+    {courseGroups.map((group) => <CourseGroup title={group.title} courses={group.courses} />)}
+
+    <div class="teaching-note reveal">
+      <strong>Teaching &amp; Grading</strong><br />
+      I serve as a grader for <em>6.122 (Design and Analysis of Algorithms)</em> and a lab assistant for both <em>6.121 (Introduction to Algorithms)</em> and <em>6.102 (Software Construction)</em>.
+    </div>
+  </Section>
+
+  <SectionDivider />
+
+  <Section
+    num="02"
+    title="Beyond"
+    accent="Class"
+    intro="Outside of academics, I'm part of the organizing teams for these communities at MIT."
+  >
+    <div class="activity-grid reveal">
+      {activities.map((activity) => <ActivityCard {...activity} />)}
+    </div>
+  </Section>
+</Layout>
+
+<style>
+  .teaching-note {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    max-width: 700px;
+    padding: 32px;
+    border-left: 2px solid var(--gold);
+    background: rgba(201, 168, 76, 0.04);
+  }
+
+  .teaching-note strong {
+    font-style: normal;
+    color: var(--gold-light);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+  }
+
+  .activity-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  @media (max-width: 900px) {
+    .activity-grid { grid-template-columns: 1fr; gap: 2px; }
+  }
+</style>

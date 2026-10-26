@@ -1,0 +1,67 @@
+---
+interface Props {
+  icon: string;
+  name: string;
+  role: string;
+  url: string;
+}
+
+const { icon, name, role, url } = Astro.props;
+---
+
+<div class="activity-card">
+  <a href={url} target="_blank">
+    <div class="activity-icon">{icon}</div>
+    <div class="activity-name">{name}</div>
+    <div class="activity-role">{role}</div>
+  </a>
+</div>
+
+<style>
+  .activity-card {
+    background: var(--surface);
+    padding: 32px 28px;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .activity-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--teal), var(--gold));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+  }
+
+  .activity-card:hover::before { transform: scaleX(1); }
+  .activity-card:hover { background: #161e18; }
+
+  .activity-card a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .activity-icon {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .activity-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .activity-role {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+</style>
