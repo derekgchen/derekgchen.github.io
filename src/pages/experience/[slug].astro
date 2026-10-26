@@ -1,0 +1,298 @@
+---
+// One page per Experience category (see experiencePages in data/experience.ts);
+// the sidebar links to each. Honors has no timeline.
+import Layout from '../../layouts/Layout.astro';
+import Timeline from '../../components/Timeline.astro';
+import { experiences, experiencePages } from '../../data/experience';
+import { papers, awards } from '../../data/profile';
+import { dateRange, entryDates, byListOrder } from '../../lib/dates';
+
+export function getStaticPaths() {
+  return experiencePages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+const { page } = Astro.props;
+const entries = page.kind ? experiences.filter((x) => x.kind === page.kind).sort(byListOrder) : [];
+const orgOf = (id: string) => experiences.find((x) => x.id === id)?.org;
+const paperById = (id: string) => papers.find((p) => p.id === id);
+// Anchors linking a paper and the bullet that describes it.
+const pubAnchor = (paperId: string) => `pub-${paperId}`;
+const workAnchor = (paperId: string) => `work-${paperId}`;
+---
+
+<Layout title={page.label} description={`${page.label}: experience of Derek Chen.`} wide>
+  <h1>{page.label}</h1>
+
+  {page.kind && (
+    <div class="timeline">
+      <Timeline kind={page.kind} />
+    </div>
+  )}
+
+  <div class="text">
+  {page.kind === 'research' && (
+    <>
+      <div class="pubs" id="publications">
+        <h2 class="sub">Publications</h2>
+        <ul>
+          {papers.map((p) => (
+            <li id={pubAnchor(p.id)}>
+              <a href={p.url} target="_blank" class="pub-title">{p.title}</a>
+              <p class="pub-venue">
+                {p.venue} {p.year}{'honor' in p && <span class="honor"> · {p.honor}</span>}
+                {p.experience && <a class="pub-lab" href={`#${workAnchor(p.id)}`}>{orgOf(p.experience)} ↓</a>}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <h2 class="sub">Positions</h2>
+    </>
+  )}
+
+  {entries.map((x) => (
+    <article class="entry" id={x.id}>
+      {x.roles ? (
+        <>
+          <div class="entry-head">
+            <h3>{x.role}<span class="org"> · {x.url ? <a href={x.url} target="_blank">{x.org}</a> : x.org}</span></h3>
+          </div>
+          <ul class="roles">
+            {x.roles.map((r) => (
+              <li class="entry-head">
+                <p class="role">{r.url ? <a href={r.url} target="_blank">{r.title}</a> : r.title}</p>
+                {r.dates && <p class="label">{r.dates}</p>}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : x.highlights ? (
+        <>
+          <div class="entry-head">
+            <h3 class="org-title">{x.url ? <a href={x.url} target="_blank">{x.org}</a> : x.org}</h3>
+          </div>
+          <ul class="roles">
+            {[...x.highlights, x].map((r) => (
+              <li>
+                <div class="entry-head">
+                  <p class="role">{r.role}</p>
+                  <p class="label">{dateRange(r)}</p>
+                </div>
+                <p class="summary">{r.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <>
+          <div class="entry-head">
+            <h3>{x.role}<span class="org"> · {x.url ? <a href={x.url} target="_blank">{x.org}</a> : x.org}</span></h3>
+            <p class="label">{entryDates(x)}</p>
+          </div>
+          {x.details ? (
+            <ul class="details">
+              {x.details.map((d) =>
+                typeof d === 'string' ? (
+                  <li>{d}</li>
+                ) : (
+                  <li id={workAnchor(d.paper)}>
+                    {d.text}
+                    <a class="bullet-pub" href={`#${pubAnchor(d.paper)}`}>
+                      {paperById(d.paper)?.venue} {paperById(d.paper)?.year}{paperById(d.paper)?.honor && ` · ${paperById(d.paper)?.honor}`} ↑
+                    </a>
+                  </li>
+                ),
+              )}
+            </ul>
+          ) : (
+            <p class="summary">{x.summary}</p>
+          )}
+        </>
+      )}
+    </article>
+  ))}
+
+  {page.slug === 'honors' && (
+    <ul class="honors">
+      {awards.map((a) => (
+        <li><span>{a.title}, {a.detail}</span>{a.year && <span class="label">{a.year}</span>}</li>
+      ))}
+    </ul>
+  )}
+  </div>
+</Layout>
+
+<script>
+  // Hovering a bar highlights its entry; hovering an entry highlights its bar(s).
+  const timeline = document.querySelector<HTMLElement>('.tl');
+  if (timeline) {
+    const mark = (id: string | null) => {
+      document.querySelectorAll('.entry.is-hover').forEach((el) => el.classList.remove('is-hover'));
+      timeline.querySelectorAll('.tl-bar.is-active').forEach((el) => el.classList.remove('is-active'));
+      if (!id) return;
+      document.getElementById(id)?.classList.add('is-hover');
+      // An entry can have several bars (one per period); light them all.
+      timeline.querySelectorAll(`.tl-bar[data-id="${id}"]`).forEach((el) => el.classList.add('is-active'));
+    };
+    timeline.addEventListener('tl-hover', (e) => mark((e as CustomEvent<string | null>).detail));
+    document.querySelectorAll<HTMLElement>('.entry[id]').forEach((el) => {
+      el.addEventListener('mouseenter', () => mark(el.id));
+      el.addEventListener('mouseleave', () => mark(null));
+    });
+  }
+</script>
+
+<style>
+  h1 { font-size: 40px; margin-bottom: 28px; }
+
+  .timeline {
+    margin-bottom: 56px;
+    font-size: 14px;
+  }
+
+  /* Text runs narrower than the timeline above it. */
+  .text { max-width: 680px; }
+
+  /* ─── Entries ─── */
+  /* The hover highlight extends 16px past the text; the divider does not. */
+  .entry {
+    position: relative;
+    margin: 0 -16px;
+    padding: 20px 16px;
+    scroll-margin-top: 24px;
+    transition: background 0.15s;
+  }
+
+  .entry::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Rounded only while highlighted, so the divider lines stay straight. */
+  .entry.is-hover { background: var(--bg-alt); border-radius: 8px; }
+
+  .entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px 16px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  h3 {
+    font-size: 19px;
+    letter-spacing: -0.01em;
+  }
+
+  .org { color: var(--accent); font-weight: 500; }
+
+  /* Org names (and some roles) link to their websites: underline on hover. */
+  .org a,
+  .org-title a,
+  .role a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .org a:hover,
+  .org-title a:hover,
+  .role a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Entries with several roles at one org: org as heading, roles beneath. */
+  .org-title { color: var(--accent); }
+
+  .roles {
+    list-style: none;
+    margin-top: 4px;
+    padding-left: 14px;
+    border-left: 2px solid var(--rule);
+  }
+
+  .roles li + li { margin-top: 10px; }
+  .roles .entry-head { margin-bottom: 2px; }
+  .role { font-weight: 600; }
+
+  .details { padding-left: 1.2em; }
+  .details li + li { margin-top: 4px; }
+
+  /* A bullet's link up to the paper it led to. */
+  .bullet-pub {
+    margin-left: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  /* Briefly mark a paper or bullet reached by a cross-link. */
+  .pubs li,
+  .details li { scroll-margin-top: 24px; }
+  .details li { border-radius: 6px; } /* not .pubs li: keeps its divider straight */
+
+  .pubs li:target,
+  .details li:target { animation: arrive 2s ease-out; }
+
+  @keyframes arrive {
+    from { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+    to { background: transparent; }
+  }
+
+  /* ─── Publications (Research) ─── */
+  .sub {
+    margin: 0 0 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .pubs { margin-bottom: 48px; scroll-margin-top: 24px; }
+  .pubs ul { list-style: none; }
+  .pubs li { padding: 14px 0; border-bottom: 1px solid var(--rule); }
+
+  .pub-title {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .pub-title::after { content: ' ↗'; color: var(--muted); font-weight: 400; }
+  .pub-title:hover { color: var(--accent); }
+
+  .pub-venue { margin-top: 4px; font-size: 14px; color: var(--accent); }
+  .honor { font-weight: 600; }
+
+  /* Link down to the position a paper came from. */
+  .pub-lab {
+    margin-left: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .pub-lab:hover { color: var(--accent); }
+
+  /* ─── Honors ─── */
+  .honors { list-style: none; border-top: 1px solid var(--rule); }
+
+  .honors li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  @media (max-width: 640px) {
+    .timeline { margin-bottom: 24px; }
+  }
+</style>

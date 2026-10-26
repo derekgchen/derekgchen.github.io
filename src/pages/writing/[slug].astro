@@ -1,0 +1,65 @@
+---
+import { render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { getPosts, formatDate } from '../../lib/writing';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout title={post.data.title} description={post.data.description}>
+  <article>
+    <header>
+      <p class="label">
+        <a href="/writing/">Writing</a> · <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+        {post.data.draft && ' · Draft'}
+      </p>
+      <h1>{post.data.title}</h1>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</Layout>
+
+<style>
+  header { margin-bottom: 40px; }
+  header .label a { color: var(--muted); text-decoration: none; }
+  header .label a:hover { color: var(--accent); }
+  h1 { font-size: clamp(32px, 6vw, 44px); margin-top: 8px; }
+
+  /* Markdown content */
+  .prose { font-size: 17px; line-height: 1.75; }
+  .prose :global(> * + *) { margin-top: 1.1em; }
+  .prose :global(h2) { font-size: 26px; margin-top: 2em; }
+  .prose :global(h3) { font-size: 20px; margin-top: 1.6em; }
+  .prose :global(ul), .prose :global(ol) { padding-left: 1.4em; }
+  .prose :global(li + li) { margin-top: 0.3em; }
+  .prose :global(blockquote) {
+    padding-left: 1em;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+  }
+  .prose :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: var(--bg-alt);
+  }
+  .prose :global(pre) {
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .prose :global(pre code) { padding: 0; background: none; }
+  .prose :global(img) { max-width: 100%; height: auto; border-radius: 6px; }
+  .prose :global(hr) { border: none; border-top: 1px solid var(--rule); margin: 2.5em 0; }
+</style>

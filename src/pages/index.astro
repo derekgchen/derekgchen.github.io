@@ -1,75 +1,89 @@
 ---
+import { Image } from 'astro:assets';
+import profilePic from '../assets/website_pic_2.png';
 import Layout from '../layouts/Layout.astro';
-import Hero from '../components/Hero.astro';
-import SectionDivider from '../components/SectionDivider.astro';
-import Section from '../components/Section.astro';
-import CourseGroup from '../components/CourseGroup.astro';
-import ActivityCard from '../components/ActivityCard.astro';
-import { courseGroups } from '../data/courses';
-import { activities } from '../data/activities';
+import { experiences } from '../data/experience';
+import { recently } from '../data/updates';
+
+// Organization websites, from the Experience data.
+const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
 ---
 
 <Layout>
-  <Hero />
+  <section class="about">
+    <Image class="photo" src={profilePic} alt="Derek Chen" widths={[160, 320]} sizes="160px" loading="eager" />
+    <h1>Hi, I'm Derek.</h1>
 
-  <SectionDivider />
-
-  <Section
-    id="school"
-    num="01"
-    title="Academic"
-    accent="Work"
-    intro="Below are some of the courses I've taken in my time here at MIT."
-  >
-    {courseGroups.map((group) => <CourseGroup title={group.title} courses={group.courses} />)}
-
-    <div class="teaching-note reveal">
-      <strong>Teaching &amp; Grading</strong><br />
-      I serve as a grader for <em>6.122 (Design and Analysis of Algorithms)</em> and a lab assistant for both <em>6.121 (Introduction to Algorithms)</em> and <em>6.102 (Software Construction)</em>.
+    <div class="prose">
+      <p>
+        I build generative models for biology, and I am broadly interested in deep learning, statistical modeling,
+        and spatial biology. I'm working on my M.Eng. thesis on point cloud–based protein modeling,
+        advised by <a href={urlOf('barzilay-group')} target="_blank">Regina Barzilay</a>, and research chromatin structure
+        prediction in the <a href={urlOf('zhang-group')} target="_blank">Zhang Group</a>. I've also been fortunate to
+        intern at <a href={urlOf('hrt')} target="_blank">Hudson River Trading</a> and
+        <a href={urlOf('sig')} target="_blank">SIG</a>.
+      </p>
+      <p>
+        I've been involved in Science Olympiad since high school and spent two years directing
+        <a href={urlOf('scioly')} target="_blank">MIT's invitational tournament</a>. In my free time, you can find me running,
+        singing along to musicals, and sampling the most scrumptious pastries.
+      </p>
     </div>
-  </Section>
+  </section>
 
-  <SectionDivider />
-
-  <Section
-    num="02"
-    title="Beyond"
-    accent="Class"
-    intro="Outside of academics, I'm part of the organizing teams for these communities at MIT."
-  >
-    <div class="activity-grid reveal">
-      {activities.map((activity) => <ActivityCard {...activity} />)}
-    </div>
-  </Section>
+  <section class="recent">
+    <h2 class="label">Recently</h2>
+    <ul>
+      {recently.map((line) => <li set:html={line} />)}
+    </ul>
+  </section>
 </Layout>
 
 <style>
-  .teaching-note {
-    font-family: 'Lora', serif;
-    font-style: italic;
-    font-size: 18px;
-    color: var(--text-muted);
-    line-height: 1.8;
-    max-width: 700px;
-    padding: 32px;
-    border-left: 2px solid var(--gold);
-    background: rgba(201, 168, 76, 0.04);
+  .about :global(.photo) {
+    float: right;
+    width: 160px;
+    height: 160px;
+    margin: 0 0 16px 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    /* Double accent ring: a thin one touching the photo, and one around it
+       after a small gap. */
+    border: 1px solid var(--accent);
+    outline: 4px solid var(--accent);
+    outline-offset: 4px;
   }
 
-  .teaching-note strong {
-    font-style: normal;
-    color: var(--gold-light);
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
+  h1 {
+    font-size: clamp(36px, 7vw, 52px);
+    margin-bottom: 28px;
   }
 
-  .activity-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
+  .prose { font-size: 17px; }
+  .prose p + p { margin-top: 16px; }
+
+  .recent {
+    clear: both;
+    margin-top: 64px;
   }
 
-  @media (max-width: 900px) {
-    .activity-grid { grid-template-columns: 1fr; gap: 2px; }
+  .recent h2 { margin-bottom: 10px; font-weight: 400; letter-spacing: 0.04em; }
+  .recent ul { list-style: none; font-size: 17px; }
+  .recent li + li { margin-top: 6px; }
+
+  .recent li::before {
+    content: '→';
+    margin-right: 10px;
+    color: var(--accent);
+  }
+
+  @media (max-width: 560px) {
+    .about :global(.photo) {
+      float: none;
+      display: block;
+      width: 112px;
+      height: 112px;
+      margin: 0 0 20px;
+    }
   }
 </style>

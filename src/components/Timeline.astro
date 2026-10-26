@@ -1,0 +1,333 @@
+---
+// Gantt-style timeline of one Experience category, laid out at build time.
+// Bars link to #<experience id> on the page; hovering one shows a tooltip and
+// fires a `tl-hover` event on .tl (detail: experience id, or null) so the page
+// can highlight the matching entry. When the year range outgrows the column,
+// the chart scrolls sideways (see .tl-track).
+import { experiences, type Experience, type Kind } from '../data/experience';
+import { toIndex, dateRange as dates, formatTerm } from '../lib/dates';
+
+interface Props {
+  /** The category to draw (the year axis still spans every entry). */
+  kind: Kind;
+}
+
+const { kind } = Astro.props;
+
+const now = new Date();
+const nowIndex = now.getFullYear() * 12 + now.getMonth();
+// Month index just past a (possibly ongoing) end date.
+const endIndex = (end: string | null) => (end ? toIndex(end) : nowIndex) + 1;
+const rangeStart = Math.min(...experiences.map((e) => toIndex(e.start)));
+const rangeEnd = (Math.floor(nowIndex / 12) + 1) * 12; // through the end of this year
+const span = rangeEnd - rangeStart;
+const pct = (i: number) => ((i - rangeStart) / span) * 100;
+
+const years: number[] = [];
+for (let y = Math.ceil(rangeStart / 12); y * 12 < rangeEnd; y++) years.push(y);
+
+// Each entry becomes one bar per period (most entries have a single period).
+type Span = { s: number; e: number; dates: string; short: string; role: string; last: boolean };
+type Item = Experience & { s: number; e: number; spans: Span[] };
+const toItem = (x: Experience): Item => {
+  const periods = x.periods ?? [{ start: x.start, end: x.end }];
+  const spans = periods.map((p, i) => ({
+    s: toIndex(p.start),
+    e: endIndex(p.end),
+    dates: x.periods ? formatTerm(p) : dates(x),
+    short: p.short ?? x.short,
+    role: p.role ?? x.role,
+    last: i === periods.length - 1,
+  }));
+  return { ...x, s: spans[0].s, e: endIndex(x.end), spans };
+};
+
+// Pack entries into as few lanes as possible without overlapping bars.
+const pack = (items: Item[]) => {
+  const lanes: { items: Item[] }[] = [];
+  const fits = (lane: { items: Item[] }, x: Item) =>
+    lane.items.every((y) => y.spans.every((a) => x.spans.every((b) => b.e <= a.s || b.s >= a.e)));
+  [...items]
+    .sort((a, b) => a.s - b.s)
+    .forEach((x) => (lanes.find((l) => fits(l, x)) ?? lanes[lanes.push({ items: [] }) - 1]).items.push(x));
+  return lanes;
+};
+
+// Untracked entries first, then each track (e.g. Teaching) in its own lanes.
+const items = experiences.filter((x) => x.kind === kind).map(toItem);
+const tracks = [...new Set(items.flatMap((x) => (x.track ? [x.track] : [])))];
+const lanes = [
+  ...pack(items.filter((x) => !x.track)).map((l) => ({ ...l, first: false })),
+  ...tracks.flatMap((t) => pack(items.filter((x) => x.track === t)).map((l, i) => ({ ...l, first: i === 0 }))),
+];
+---
+
+<div class="tl">
+  <div class="tl-chart">
+    <div class="tl-scroll">
+      <div class="tl-track" style={`--months:${span}`}>
+        <div class="tl-axis">
+          {years.map((y) => <span class="tl-year" style={`left:${pct(y * 12)}%`}>{y}</span>)}
+        </div>
+        <div class="tl-body">
+          {years.map((y) => <span class="tl-grid" style={`left:${pct(y * 12)}%`} />)}
+          {lanes.map((lane) => (
+            <div class:list={['tl-lane', { 'tl-track-start': lane.first }]}>
+              {lane.items.map((x) =>
+                x.spans.map((sp) => (
+                  <a
+                    href={`#${x.id}`}
+                    class:list={['tl-bar', { 'tl-ongoing': !x.end && sp.last }]}
+                    style={`left:${pct(sp.s)}%;width:${pct(sp.e) - pct(sp.s)}%`}
+                    aria-label={`${sp.role}, ${x.org}, ${sp.dates}`}
+                    data-id={x.id}
+                    data-role={sp.role}
+                    data-org={x.org}
+                    data-dates={sp.dates}
+                    data-summary={x.summary}
+                  >
+                    {x.highlights?.map((h) => (
+                      <span
+                        class="tl-seg"
+                        style={`left:${((toIndex(h.start) - sp.s) / (sp.e - sp.s)) * 100}%;width:${((endIndex(h.end) - toIndex(h.start)) / (sp.e - sp.s)) * 100}%`}
+                        data-role={h.role}
+                        data-dates={dates(h)}
+                        data-summary={h.summary}
+                      />
+                    ))}
+                    <span class="tl-label">{sp.short}</span>
+                  </a>
+                )),
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div class="tl-tip" role="tooltip" hidden />
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.tl').forEach((tl) => {
+    const bars = tl.querySelectorAll<HTMLElement>('.tl-bar');
+    const chart = tl.querySelector<HTMLElement>('.tl-chart')!;
+    const scroller = tl.querySelector<HTMLElement>('.tl-scroll')!;
+    const tip = tl.querySelector<HTMLElement>('.tl-tip')!;
+
+    // Fit labels to their bars: tighten padding first, and only hide the label
+    // if it still overflows (the tooltip still shows it).
+    const overflows = (bar: HTMLElement) => bar.scrollWidth > bar.clientWidth;
+    const fit = () =>
+      bars.forEach((bar) => {
+        bar.classList.remove('tl-compact', 'tl-narrow');
+        if (!overflows(bar)) return;
+        bar.classList.add('tl-compact');
+        if (overflows(bar)) bar.classList.replace('tl-compact', 'tl-narrow');
+      });
+    new ResizeObserver(fit).observe(tl);
+
+    // Tooltip under the hovered bar (or highlight segment), plus an event for
+    // the page. It lives outside the scroller so it isn't clipped.
+    let current: HTMLElement | null = null;
+    const hover = (bar: HTMLElement | null, part: HTMLElement | null = bar) => {
+      if (part === current) return;
+      current = part;
+      tl.dispatchEvent(new CustomEvent('tl-hover', { detail: bar?.dataset.id ?? null }));
+      if (!bar || !part) return void (tip.hidden = true);
+      const { role, dates, summary } = part.dataset;
+      tip.replaceChildren(
+        Object.assign(document.createElement('strong'), { textContent: `${role} · ${bar.dataset.org}` }),
+        Object.assign(document.createElement('span'), { className: 'tl-dates', textContent: dates }),
+        Object.assign(document.createElement('span'), { textContent: summary }),
+      );
+      tip.hidden = false;
+      const b = part.getBoundingClientRect();
+      const box = chart.getBoundingClientRect();
+      tip.style.left = `${Math.max(0, Math.min(b.left - box.left, box.width - tip.offsetWidth))}px`;
+      tip.style.top = `${b.bottom - box.top + 6}px`;
+    };
+
+    bars.forEach((bar) => {
+      bar.addEventListener('mousemove', (e) => hover(bar, (e.target as Element).closest<HTMLElement>('.tl-seg') ?? bar));
+      bar.addEventListener('focus', () => hover(bar));
+      bar.addEventListener('mouseleave', () => hover(null));
+      bar.addEventListener('blur', () => hover(null));
+    });
+
+    // When the chart scrolls, start at the present (right end), and fade
+    // whichever edge has more to see.
+    const edges = () => {
+      const max = scroller.scrollWidth - scroller.clientWidth;
+      scroller.classList.toggle('more-left', scroller.scrollLeft > 1);
+      scroller.classList.toggle('more-right', scroller.scrollLeft < max - 1);
+    };
+    scroller.scrollLeft = scroller.scrollWidth;
+    edges();
+    scroller.addEventListener('scroll', () => (edges(), hover(null)), { passive: true });
+    new ResizeObserver(edges).observe(scroller);
+  });
+</script>
+
+<style>
+  .tl { --c: var(--accent); }
+
+  .tl-axis {
+    position: relative;
+    height: 22px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .tl-year {
+    position: absolute;
+    top: 0;
+    transform: translateX(4px);
+  }
+
+  .tl-body {
+    position: relative;
+    padding: 10px 0;
+  }
+
+  .tl-grid {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--rule);
+  }
+
+  .tl-lane {
+    position: relative;
+    height: 30px;
+    margin: 4px 0;
+  }
+
+  /* A track (e.g. Teaching) starts after a small gap, apart from other rows. */
+  .tl-track-start { margin-top: 14px; }
+
+  /* ─── Scrolling (only when the range outgrows the container) ─── */
+  .tl-chart { position: relative; }
+
+  .tl-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  /* Minimum width per month. While the whole range fits, the chart fills its
+     container; once it doesn't (more years, or a phone), it scrolls sideways. */
+  .tl-track {
+    --month-px: 14px;
+    min-width: calc(var(--months) * var(--month-px));
+  }
+
+  /* Phones scroll anyway, so give months more room for readable labels. */
+  @media (max-width: 640px) {
+    .tl-track { --month-px: 18px; }
+  }
+
+  .tl-scroll.more-left { -webkit-mask-image: linear-gradient(to right, transparent, #000 32px); mask-image: linear-gradient(to right, transparent, #000 32px); }
+  .tl-scroll.more-right { -webkit-mask-image: linear-gradient(to left, transparent, #000 32px); mask-image: linear-gradient(to left, transparent, #000 32px); }
+  .tl-scroll.more-left.more-right {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  }
+
+  /* ─── Bars ─── */
+  .tl-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-radius: 4px;
+    background: var(--c);
+    color: var(--on-accent);
+    font-size: 13px;
+    white-space: nowrap;
+    text-decoration: none;
+    overflow: hidden;
+    /* clip (unlike hidden) isn't a scroll container, so the sticky label below
+       sticks to the timeline's visible edge rather than the bar's. */
+    overflow: clip;
+    transition: filter 0.15s, box-shadow 0.15s;
+  }
+
+  .tl-bar:hover,
+  .tl-bar:focus-visible,
+  .tl-bar.is-active {
+    filter: brightness(1.1);
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--c);
+    outline: none;
+  }
+
+  .tl-ongoing {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  .tl-compact {
+    padding: 0 4px;
+    justify-content: center;
+    letter-spacing: -0.01em;
+  }
+
+  /* Highlighted sub-roles: a lighter bar inset within the full bar, so the
+     solid outer bar encloses it above and below. */
+  .tl-seg {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--c) 45%, var(--bg));
+  }
+
+  /* A bar that starts off-screen keeps its label at the visible left edge
+     (clear of the edge fade while the timeline is scrolled). */
+  .tl-label {
+    position: sticky;
+    left: 6px; /* bar padding (10px) minus the backing's 4px */
+    /* Backing in the bar's color: invisible on a plain bar, but keeps the
+       label readable when it slides over a lighter highlight segment. */
+    margin: 0 -4px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--c);
+  }
+
+  .tl-scroll.more-left .tl-label { left: 26px; }
+
+  .tl-narrow .tl-label { visibility: hidden; }
+
+  /* ─── Tooltip ─── */
+  .tl-tip {
+    position: absolute;
+    z-index: 2;
+    width: max-content;
+    max-width: min(340px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--bg);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    font-size: 13px;
+    line-height: 1.45;
+    pointer-events: none;
+  }
+
+  .tl-tip[hidden] { display: none; }
+
+  .tl :global(.tl-dates) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
