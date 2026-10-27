@@ -82,7 +82,7 @@ const contacts = [
               {experienceLinks.map((n) => (
                 <li><a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>{n.label}</a></li>
               ))}
-              <li><a href={site.resume} target="_blank">Résumé ↗</a></li>
+              <li><a href={site.resume} target="_blank">Résumé</a></li>
             </ul>
           </div>
           {site.writingListed && <a href="/writing/" aria-current={isCurrent('/writing/') ? 'page' : undefined}>Writing</a>}
@@ -93,7 +93,7 @@ const contacts = [
         <main>
           <slot />
         </main>
-        <footer>Set in Bricolage Grotesque, Inter, and Chivo Mono. Built with Astro.</footer>
+        <footer>© {new Date().getFullYear()} {site.name}</footer>
       </div>
     </div>
   </body>

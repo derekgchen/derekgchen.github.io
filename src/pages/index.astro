@@ -3,7 +3,7 @@ import { Image } from 'astro:assets';
 import profilePic from '../assets/website_pic_2.png';
 import Layout from '../layouts/Layout.astro';
 import { experiences } from '../data/experience';
-import { recently, recentlyUpdated } from '../data/updates';
+import { recently, recentlyUpdated, stuckInMyHead as song } from '../data/updates';
 
 // Organization websites, from the Experience data.
 const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
@@ -21,7 +21,7 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
         advised by <a href={urlOf('barzilay-group')} target="_blank">Regina Barzilay</a>, and research chromatin structure
         prediction in the <a href={urlOf('zhang-group')} target="_blank">Zhang Group</a>. I've also been fortunate to
         intern at <a href={urlOf('hrt')} target="_blank">Hudson River Trading</a> and
-        <a href={urlOf('sig')} target="_blank">SIG</a>.
+        <a href={urlOf('sig')} target="_blank">Susquehanna</a>.
       </p>
       <p>
         I've been involved in Science Olympiad since high school and spent two years directing
@@ -33,13 +33,19 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
 
   <section class="recent">
     <div class="recent-head">
-      <h2 class="label">Recently, I've...</h2>
+      <h2>Recently, I've...</h2>
       <p class="label">Updated {recentlyUpdated}</p>
     </div>
     <ul>
       {/* One span per line, so text and links stay together beside the arrow. */}
       {recently.map((line) => <li><span set:html={line} /></li>)}
     </ul>
+
+    <p class="song">
+      <span class="song-label">Stuck in my head...</span>
+      {song.url ? <a class="song-title" href={song.url} target="_blank">{song.title}</a> : <span class="song-title">{song.title}</span>}
+      <span class="song-artist">· {song.artist}</span>
+    </p>
   </section>
 </Layout>
 
@@ -76,10 +82,10 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
     justify-content: space-between;
     align-items: baseline;
     gap: 16px;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
   }
 
-  .recent h2 { font-weight: 400; letter-spacing: 0.04em; }
+  .recent h2 { font-size: 28px; }
   .recent ul { list-style: none; font-size: 17px; }
   .recent li + li { margin-top: 6px; }
 
@@ -91,6 +97,54 @@ const urlOf = (id: string) => experiences.find((x) => x.id === id)?.url;
 
   .recent li::before {
     content: '→';
+    color: var(--accent);
+  }
+
+  /* Solid accent box, like the timeline bars. */
+  .song {
+    margin-top: 24px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--on-accent);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 6px;
+    font-size: 17px;
+  }
+
+  .song-label {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .song-label::after {
+    content: '♪';
+    margin-left: 10px;
+    font-weight: 400;
+  }
+
+  .song-title {
+    font-weight: 500;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Fade with color, not opacity, which would also fade the hover underline
+     and the selection highlight. */
+  a.song-title::after { color: color-mix(in srgb, currentColor 75%, transparent); }
+  a.song-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .song-artist { color: color-mix(in srgb, currentColor 75%, transparent); }
+
+  /* The site's selection color is a light accent tint, which vanishes on the
+     solid accent box; invert it here. */
+  .song::selection,
+  .song ::selection {
+    background: var(--on-accent);
     color: var(--accent);
   }
 

@@ -248,13 +248,13 @@ const workAnchor = (paperId: string) => `work-${paperId}`;
 
   /* ─── Publications (Research) ─── */
   .sub {
-    margin: 0 0 4px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 400;
-    letter-spacing: 0.04em;
-    color: var(--muted);
+    margin: 0 0 16px;
+    font-size: 28px;
   }
+
+  /* Indent each section's items under its heading. */
+  .pubs ul { padding-left: 20px; }
+  .sub ~ .entry { margin-left: 4px; } /* .entry's -16px bleed + 20px */
 
   .pubs { margin-bottom: 48px; scroll-margin-top: 24px; }
   .pubs ul { list-style: none; }

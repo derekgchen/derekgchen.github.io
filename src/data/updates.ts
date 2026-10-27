@@ -10,3 +10,11 @@ export const recently: string[] = [
 
 /** When the lines above were last revised; update it whenever you edit them. */
 export const recentlyUpdated = 'October 2026';
+
+/** "Stuck in my head" on the About page: one hand-picked song. `url` is
+    optional; paste a Spotify (or any) share link to make the title a link. */
+export const stuckInMyHead: { title: string; artist: string; url?: string } = {
+  title: 'Another Day of Sun',
+  artist: 'La La Land',
+  url: 'https://open.spotify.com/search/Another%20Day%20of%20Sun%20La%20La%20Land',
+};

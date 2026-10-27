@@ -264,8 +264,7 @@ Three earlier single-page mockups were compared (since removed):
 - **Static and fast.** No client-side framework; the only JavaScript is the
   timeline's tooltips and label fitting, plus entry highlighting on Experience. React is available later via `npx astro add react`
   for interactive demos.
-- **Colophon** is one footer line, e.g. "Set in Bricolage Grotesque, Inter, and Chivo Mono.
-  Built with Astro."
+- **Footer** is one line: "© {year} Derek Chen", the year taken at build time.
 
 ---
 

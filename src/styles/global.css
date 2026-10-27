@@ -10,7 +10,7 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   font-size: 16px;
-  line-height: 1.65;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -23,13 +23,23 @@ h1, h2, h3 {
 
 a {
   color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-decoration: none;
   text-underline-offset: 3px;
-  transition: text-decoration-color 0.15s;
 }
 
-a:hover { text-decoration-color: currentColor; }
+a:hover { text-decoration: underline; }
+
+/* External links (they open in a new tab) end in an arrow; the no-break space
+   keeps it from wrapping onto its own line. Icon-only links (which carry an
+   aria-label instead of text) are left alone. */
+/* External link text is bold, except in the sidebar nav, where bold marks the
+   current page. */
+a[target="_blank"]:not(nav a) { font-weight: 600; }
+
+a[target="_blank"]:not([aria-label])::after {
+  content: '\00a0↗';
+  font-weight: 400;
+}
 
 :focus-visible {
   outline: 2px solid var(--accent-2);
