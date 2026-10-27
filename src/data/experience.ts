@@ -42,6 +42,9 @@ export interface Experience {
   pinned?: boolean;
   /** Organization's website; the org name links to it in the list. */
   url?: string;
+  /** Extra sentences below the entry on the Experience page (not the
+      timeline); may contain links. */
+  note?: string;
 }
 
 export interface Period {
@@ -248,5 +251,6 @@ export const experiences: Experience[] = [
         summary: 'Directed the tournament, with over 1,000 attendees from across the nation.',
       },
     ],
+    note: `Besides organizing MIT Science Olympiad logistically, I have also event supervised for <a href="https://drive.google.com/drive/folders/1BQ5g3jaWkEkR04Z3Mp9zR5rHrfY5xPfr" target="_blank">MIT Science Olympiad</a> and other tournaments. My favorite event is Fossils!`,
   },
 ];

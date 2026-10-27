@@ -114,6 +114,7 @@ const workAnchor = (paperId: string) => `work-${paperId}`;
           )}
         </>
       )}
+      {x.note && <p class="note" set:html={x.note} />}
     </article>
   ))}
 
@@ -223,6 +224,8 @@ const workAnchor = (paperId: string) => `work-${paperId}`;
   .role { font-weight: 600; }
 
   .details { padding-left: 1.2em; }
+
+  .note { margin-top: 10px; }
   .details li + li { margin-top: 4px; }
 
   /* A bullet's link up to the paper it led to. */

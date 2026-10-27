@@ -59,7 +59,13 @@ const contacts = [
   <body>
     <div class:list={['shell', { wide }]}>
       <aside class="sidebar">
-        <a href="/" class="name">{site.name}</a>
+        <a href="/" class="name">
+          <svg class="logo" viewBox="-0.45 0.6 24.9 22.8" fill="currentColor" aria-hidden="true">
+            <path transform="translate(2.152 10.264) rotate(15)" d="M0 -10A10 10 0 0 1 0 10Z" />
+            <path transform="translate(21.848 13.736) rotate(15)" d="M0 -10A10 10 0 0 0 0 10Z" />
+          </svg>
+          {site.name}
+        </a>
         <p class="degrees">
           {site.degrees.map((d) => <span>{d}</span>)}
         </p>
@@ -146,6 +152,16 @@ const contacts = [
     letter-spacing: -0.02em;
     color: var(--accent);
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Logo: two half-discs, each tilted 15°, touching at their curves; their
+     centers sit on a 10° slope. Same shape as public/favicon.svg. */
+  .logo {
+    flex: none;
+    height: 0.8em;
   }
 
   .degrees {
