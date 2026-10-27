@@ -16,5 +16,5 @@ export const recentlyUpdated = 'October 2026';
 export const stuckInMyHead: { title: string; artist: string; url?: string } = {
   title: 'Another Day of Sun',
   artist: 'La La Land',
-  url: 'https://open.spotify.com/search/Another%20Day%20of%20Sun%20La%20La%20Land',
+  url: 'https://open.spotify.com/track/5kRBzRZmZTXVg8okC7SJFZ',
 };
