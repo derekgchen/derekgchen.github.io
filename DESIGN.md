@@ -11,7 +11,7 @@ If this file and that one disagree, the code wins; update this file.
 
 | Decision | Status | Choice |
 |---|---|---|
-| Color palette | **Locked** (2026-10-25; accents swapped 2026-10-26) | Sandstone & Teal: blue-green primary, plum secondary |
+| Color palette | **Locked** (2026-10-25; accents swapped 2026-10-26) | Sandstone & Teal by default: blue-green primary, plum secondary. Clicking the logo cycles through seven palettes (2026-10-28) |
 | Heading font | **Locked** (2026-10-25) | Bricolage Grotesque |
 | Body font | **Locked** (2026-10-25) | Inter |
 | Italic emphasis in headings | Moot | No heading uses italic emphasis (Bricolage has no italic) |
@@ -31,7 +31,9 @@ studio (2026-10-25); on 2026-10-26 the accents were swapped so blue-green leads,
 and it was shifted ~12° greener and darkened slightly (`#2f6f73` → `#2e6f66`)
 so it passes AA on every background. On 2026-10-26 it was made more
 saturated (HSL saturation 0.41 → 0.60, slightly darker): `#2e6f66` → `#1c7166`.
-Only the live palette is in `themes.ts`; this file records the others.
+It's the default. Since 2026-10-28, clicking the logo cycles through seven
+palettes in `themes.ts` (the choice is remembered per browser); see
+[Palettes considered](#palettes-considered).
 
 | Token | Hex | Use |
 |---|---|---|
@@ -75,15 +77,19 @@ These were compared in a temporary design studio (since removed).
 
 | Palette | Mode | Accents | Notes |
 |---|---|---|---|
-| **Sandstone & Teal** | light | `#1c7166` `#7a3b69` (`#a87420`) | **Live**: Plum with the accents swapped |
-| Sandstone & Plum | light | `#7a3b69` `#2f6f73` (`#a87420`) | Original pick (2026-10-25) |
-| Paper & Rust | light | `#c4502f` `#3c5f8c` `#5e7f62` | Closest to Montgomery Bohde's site |
-| Forest & Gold | dark | `#c9a84c` `#4aad8b` `#b9765b` | The original (pre-2026) site |
-| Ink & Cobalt | light | `#2563eb` `#3f3f46` `#8b8b94` | Minimal, near-monochrome |
-| Lab Notebook | light | `#1f7a5c` `#b5651d` `#6b5ca5` | Green paper |
+| **Sandstone & Teal** | light | `#1c7166` `#7a3b69` (`#a87420`) | **Default**: Plum with the accents swapped |
+| Sandstone & Plum | light | `#7a3b69` `#2f6f73` (`#a87420`) | Original pick (2026-10-25). **In the logo's cycle** (second accent `#1c7166`) |
+| Paper & Rust | light | `#c4502f` `#3c5f8c` `#5e7f62` | Closest to Montgomery Bohde's site. **In the cycle**, accent darkened to `#b0442a` for AA |
+| Forest & Gold | dark | `#c9a84c` `#4aad8b` `#b9765b` | The original (pre-2026) site. **In the cycle**, accent `#d1b056` |
+| Ink & Cobalt | light | `#2563eb` `#3f3f46` `#8b8b94` | Minimal, near-monochrome. **In the cycle**, accent darkened to `#2058d6` for AA |
+| Lab Notebook | light | `#1f7a5c` `#b5651d` `#6b5ca5` | Green paper. **In the cycle**, accents darkened to `#1a6e52` `#a85c1a` for AA |
 | Petri Dish | light | `#c2185b` `#00897b` `#5c6bc0` | Magenta and teal; brightest |
-| Midnight & Coral | dark | `#ff7a59` `#6ea8ff` `#b48ef0` | Navy |
+| Midnight & Coral | dark | `#ff7a59` `#6ea8ff` `#b48ef0` | Navy. **In the cycle** |
 | Graphite | dark | `#e9b44c` `#7aa2f7` `#9ece6a` | Neutral dark |
+
+Every palette in the cycle passes AA (4.5:1) for text, muted text and accent on
+`--bg`, `--bg-alt` and `--bg-side`, and for `--on-accent` on the accent. Their
+full token values are in `themes.ts`.
 
 ---
 

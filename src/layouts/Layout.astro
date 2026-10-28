@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import { site } from '../data/site';
 import { experiencePages } from '../data/experience';
-import { fontsHref, tokenStyle } from '../design/themes';
+import { fontsHref, tokenStyle, palettes, paletteVars } from '../design/themes';
 
 interface Props {
   title?: string;
@@ -13,6 +13,8 @@ interface Props {
 
 const { title, description = site.description, wide = false } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : site.name;
+// For the logo's palette switcher: each palette's CSS custom properties.
+const paletteData = palettes.map((p) => ({ id: p.id, name: p.name, vars: paletteVars(p.colors) }));
 
 
 const path = Astro.url.pathname;
@@ -55,17 +57,28 @@ const contacts = [
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href={fontsHref} />
+    <script is:inline define:vars={{ paletteData }}>
+      // Apply the palette picked with the logo (remembered per browser) before
+      // the page paints, so it doesn't flash the default first.
+      window.__palettes = paletteData;
+      try {
+        const saved = paletteData.find((p) => p.id === localStorage.getItem('palette'));
+        if (saved) saved.vars.forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+      } catch {}
+    </script>
   </head>
   <body>
     <div class:list={['shell', { wide }]}>
       <aside class="sidebar">
-        <a href="/" class="name">
-          <svg class="logo" viewBox="-0.45 0.6 24.9 22.8" fill="currentColor" aria-hidden="true">
-            <path transform="translate(2.152 10.264) rotate(15)" d="M0 -10A10 10 0 0 1 0 10Z" />
-            <path transform="translate(21.848 13.736) rotate(15)" d="M0 -10A10 10 0 0 0 0 10Z" />
-          </svg>
-          {site.name}
-        </a>
+        <div class="brand">
+          <button type="button" class="logo-button" aria-label="Change color palette" title="Change color palette">
+            <svg class="logo" viewBox="-0.45 0.6 24.9 22.8" fill="currentColor" aria-hidden="true">
+              <path transform="translate(2.152 10.264) rotate(15)" d="M0 -10A10 10 0 0 1 0 10Z" />
+              <path transform="translate(21.848 13.736) rotate(15)" d="M0 -10A10 10 0 0 0 0 10Z" />
+            </svg>
+          </button>
+          <a href="/" class="name">{site.name}</a>
+        </div>
         <p class="degrees">
           {site.degrees.map((d) => <span>{d}</span>)}
         </p>
@@ -82,6 +95,7 @@ const contacts = [
 
         <nav aria-label="Main">
           <a href="/" aria-current={isCurrent('/') ? 'page' : undefined}>About</a>
+          <a href="/school/" aria-current={isCurrent('/school/') ? 'page' : undefined}>School</a>
           <div class="group">
             <span class:list={['group-label', { current: isCurrent('/experience/') }]}>Experience</span>
             <ul>
@@ -104,6 +118,83 @@ const contacts = [
     </div>
   </body>
 </html>
+
+<script>
+  // On hover, the logo's halves tilt over to -15° and back. As they tip, their
+  // centers draw toward the same height, closest at the extreme tilt. The
+  // halves stay tangent throughout: their centers stay one diameter (20) apart,
+  // mirrored through the logo's center (12, 12).
+  const logo = document.querySelector<SVGElement>('.logo');
+  const [left, right] = logo ? [...logo.querySelectorAll('path')] : [];
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  const REST_TILT = 15;
+  // How far the centers level out at the extreme tilt (0: not at all, keeping
+  // each half's resting top and bottom; 1: fully level).
+  const LEVELING = 0.9;
+  // Middle of the left half's vertical span at rest: its center sits 10 sin(10°)
+  // above the logo's center, and its top is the chord's end, 10 cos(15°) up.
+  const MID = 12 - 10 * Math.sin(rad(10)) + 5 * (1 - Math.cos(rad(REST_TILT)));
+
+  const pose = (tilt: number) => {
+    // A half tilted toward its curve has the arc on one end of its span and a
+    // chord corner on the other, so its center sits off the span's middle.
+    const off = 5 * (1 - Math.cos(rad(tilt)));
+    const spanKeepingY = tilt >= 0 ? MID - off : MID + off;
+    // Vertical gap between the centers: the span-keeping gap, cut by LEVELING in
+    // proportion to how far the halves have tipped (none at rest, all at -15°).
+    const dy = (24 - 2 * spanKeepingY) * (1 - (LEVELING * (REST_TILT - tilt)) / (2 * REST_TILT));
+    const dx = Math.sqrt(400 - dy * dy);
+    const y = 12 - dy / 2;
+    left.setAttribute('transform', `translate(${12 - dx / 2} ${y}) rotate(${tilt})`);
+    right.setAttribute('transform', `translate(${12 + dx / 2} ${24 - y}) rotate(${tilt})`);
+  };
+
+  // One full swing per hover (or click); it finishes even if the pointer leaves.
+  let swinging = false;
+  const swing = () => {
+    if (swinging || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    swinging = true;
+    const start = performance.now();
+    const frame = (now: number) => {
+      const t = Math.min((now - start) / 1200, 1);
+      pose(REST_TILT * Math.cos(2 * Math.PI * t)); // 15° → -15° → 15°, easing at both ends
+      if (t < 1) requestAnimationFrame(frame);
+      else swinging = false;
+    };
+    requestAnimationFrame(frame);
+  };
+
+  // Clicking the logo moves to the next color palette, remembered per browser
+  // (the head script applies it on later pages). The tab icon follows the accent.
+  type PaletteData = { id: string; name: string; vars: [string, string][] };
+  const palettes: PaletteData[] = (window as any).__palettes;
+  const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  const faviconSvg = favicon ? fetch(favicon.href).then((r) => r.text()) : null;
+  const applyPalette = (p: PaletteData) => {
+    p.vars.forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    const accent = p.vars.find(([k]) => k === '--accent')![1];
+    faviconSvg?.then((svg) => {
+      favicon!.href = `data:image/svg+xml,${encodeURIComponent(svg.replace(/fill="#[0-9a-f]{6}"/i, `fill="${accent}"`))}`;
+    });
+  };
+  let current = 0;
+  try {
+    current = Math.max(0, palettes.findIndex((p) => p.id === localStorage.getItem('palette')));
+  } catch {}
+  if (current > 0) applyPalette(palettes[current]);
+
+  const logoButton = document.querySelector<HTMLButtonElement>('.logo-button');
+  logoButton?.addEventListener('mouseenter', swing);
+  logoButton?.addEventListener('click', () => {
+    current = (current + 1) % palettes.length;
+    applyPalette(palettes[current]);
+    logoButton.title = `Change color palette (now ${palettes[current].name})`;
+    try {
+      localStorage.setItem('palette', palettes[current].id);
+    } catch {}
+    swing(); // no-op if the hover already started one
+  });
+</script>
 
 <style>
   /* Sidebar + content as one centered unit. Its width is the same on every
@@ -144,6 +235,12 @@ const contacts = [
     padding: 80px 0 32px;
   }
 
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   .name {
     font-family: var(--font-display);
     font-size: 32px;
@@ -152,16 +249,25 @@ const contacts = [
     letter-spacing: -0.02em;
     color: var(--accent);
     text-decoration: none;
+  }
+
+  /* The logo is a button: clicking it switches the color palette. */
+  .logo-button {
+    flex: none;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    cursor: pointer;
   }
 
   /* Logo: two half-discs, each tilted 15°, touching at their curves; their
-     centers sit on a 10° slope. Same shape as public/favicon.svg. */
+     centers sit on a 10° slope. Same shape as public/favicon.svg. Hovering
+     animates it (see the script above). */
   .logo {
-    flex: none;
-    height: 0.8em;
+    height: 34px;
+    overflow: visible;
   }
 
   .degrees {

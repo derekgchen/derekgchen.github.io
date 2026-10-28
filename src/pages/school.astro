@@ -1,0 +1,170 @@
+---
+// Classes I've taken, as a vertical timeline: one row per fall/spring term,
+// oldest first, with that term's classes side by side. Data in data/profile.ts.
+import Layout from '../layouts/Layout.astro';
+import { classes, firstTerm, lastTerm } from '../data/profile';
+
+// Every fall and spring term from firstTerm to lastTerm, in order.
+const terms: string[] = [];
+{
+  let [season, year] = firstTerm.split(' ');
+  let y = Number(year);
+  while (true) {
+    const t = `${season} ${y}`;
+    terms.push(t);
+    if (t === lastTerm) break;
+    if (season === 'Fall') { season = 'Spring'; y += 1; } else { season = 'Fall'; }
+  }
+}
+
+// Subject areas, in button order, each with the course-number prefixes that
+// belong to it; picking one highlights its classes. A class can instead list
+// its areas directly: one that differs from its number (archaeology, which MIT
+// numbers under Course 3), or several (a class that is both CS and biology).
+const areas = [
+  { id: 'cs', label: 'Computer Science', prefixes: ['6'] },
+  { id: 'math', label: 'Math', prefixes: ['18'] },
+  { id: 'bio', label: 'Biology & Chemistry', prefixes: ['7', '20', '5'] },
+  { id: 'hum', label: 'Humanities', prefixes: ['21H', '4', '14', '9'] },
+];
+type Class = (typeof classes)[number];
+const areasOf = (c: Class): string[] =>
+  c.areas ?? areas.filter((a) => a.prefixes.includes(c.number.split('.')[0])).map((a) => a.id);
+const shown = areas.filter((a) => classes.some((c) => areasOf(c).includes(a.id)));
+// Within a term, classes are grouped by (first) area, so a highlight reads as a block.
+const areaRank = (c: Class) => areas.findIndex((a) => a.id === areasOf(c)[0]);
+---
+
+<Layout title="School" description="School: the classes Derek Chen has taken at MIT, by semester." wide>
+  <h1>School</h1>
+  <p class="intro">
+    I completed my semi-concurrent undergrad and masters at MIT. Take a look at the classes I enjoyed!
+  </p>
+
+  <div class="filters" role="group" aria-label="Highlight a subject">
+    <button type="button" data-area="" aria-pressed="true">All</button>
+    <button type="button" data-area="fav" aria-pressed="false">★ Favorites</button>
+    {shown.map((a) => <button type="button" data-area={a.id} aria-pressed="false">{a.label}</button>)}
+  </div>
+
+  <ol class="terms">
+    {terms.map((t) => {
+      const taken = classes.filter((c) => c.term === t).sort((a, b) => areaRank(a) - areaRank(b));
+      return (
+        <li class:list={['term', { empty: taken.length === 0 }]}>
+          <p class="term-label label">{t}</p>
+          <ul class="stack">
+            {taken.map((c) => (
+              <li class="class" data-areas={[...areasOf(c), ...(c.favorite ? ['fav'] : [])].join(' ')}>
+                <span class="num">{c.number}</span>
+                <span class="name">{c.name}</span>
+              </li>
+            ))}
+          </ul>
+        </li>
+      );
+    })}
+  </ol>
+</Layout>
+
+<script>
+  // Picking a subject (or Favorites, listed as the pseudo-area "fav") highlights
+  // its classes and fades the rest; "All" clears it.
+  const terms = document.querySelector<HTMLElement>('.terms')!;
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.filters button');
+  buttons.forEach((button) =>
+    button.addEventListener('click', () => {
+      const area = button.dataset.area!;
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      terms.classList.toggle('is-filtered', area !== '');
+      terms
+        .querySelectorAll<HTMLElement>('.class')
+        .forEach((c) => c.classList.toggle('is-on', c.dataset.areas!.split(' ').includes(area)));
+    }),
+  );
+</script>
+
+<style>
+  h1 { font-size: 40px; margin-bottom: 20px; }
+
+  .intro { max-width: 680px; margin-bottom: 24px; font-size: 17px; }
+
+  /* Subject buttons: pills, filled while picked. */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .filters button {
+    padding: 5px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .filters button:hover { color: var(--text); border-color: var(--muted); }
+
+  .filters button[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+
+  /* One row per term: label, then that term's classes. Rows are divided like
+     the other lists on the site. */
+  .terms { list-style: none; max-width: 680px; border-top: 1px solid var(--rule); }
+
+  .term {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .term-label { padding-top: 2px; }
+
+  /* Three even columns, so the cards end flush with the row's divider. */
+  .stack {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    list-style: none;
+  }
+
+  /* Terms with no classes listed (yet). */
+  .empty .term-label { opacity: 0.6; }
+
+  .class {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--on-accent);
+    transition: background 0.15s, color 0.15s;
+  }
+
+  /* While a subject is picked, the other classes fade to the page's card color. */
+  .is-filtered .class:not(.is-on) {
+    background: var(--bg-alt);
+    color: color-mix(in srgb, var(--text) 45%, transparent);
+  }
+
+  .num { font-family: var(--font-mono); font-size: 11px; opacity: 0.85; }
+  .name { font-size: 14px; font-weight: 500; line-height: 1.3; }
+
+  /* Narrow screens: the label sits above the term's classes. */
+  @media (max-width: 560px) {
+    .term { grid-template-columns: 1fr; gap: 8px; }
+    .stack { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
