@@ -1,0 +1,49 @@
+---
+// Passcode box for a locked post. The page's own script handles submitting it.
+interface Props {
+  id: string;
+  hidden?: boolean;
+  autofocus?: boolean;
+}
+
+const { id, hidden = false, autofocus = false } = Astro.props;
+---
+
+<form class="unlock" hidden={hidden}>
+  <div class="row">
+    <label class="label" for={id}>Passcode</label>
+    <input id={id} type="password" autocomplete="current-password" required autofocus={autofocus} />
+    <button type="submit">Unlock</button>
+  </div>
+  <p class="status label" role="status"></p>
+</form>
+
+<style>
+  /* Right-aligned: label, field, and button on one line, messages below. */
+  .unlock { display: flex; flex-direction: column; align-items: flex-end; }
+  .unlock[hidden] { display: none; }
+  .row { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 340px; }
+  label { margin-right: 4px; white-space: nowrap; }
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--bg);
+    font: inherit;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .status { min-height: 1.5em; margin-top: 6px; }
+</style>

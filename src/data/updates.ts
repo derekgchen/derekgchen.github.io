@@ -9,7 +9,7 @@ export const recently: string[] = [
 ];
 
 /** When the lines above were last revised; update it whenever you edit them. */
-export const recentlyUpdated = 'October 2026';
+export const recentlyUpdated = '2026-10';
 
 /** "Stuck in my head" on the About page: one hand-picked song. `url` is
     optional; paste a Spotify (or any) share link to make the title a link. */

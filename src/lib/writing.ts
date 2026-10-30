@@ -1,10 +1,13 @@
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 
-/** Posts newest first. Drafts are included only in the dev server. */
-export async function getPosts() {
-  const posts = await getCollection('writing', ({ data }) => import.meta.env.DEV || !data.draft);
+export type Post = CollectionEntry<'writing'> | CollectionEntry<'locked'>;
+
+/** Posts newest first, locked ones included. Drafts are included only in the dev server. */
+export async function getPosts(): Promise<Post[]> {
+  const show = ({ data }: { data: { draft: boolean } }) => import.meta.env.DEV || !data.draft;
+  const posts = [...(await getCollection('writing', show)), ...(await getCollection('locked', show))];
   return posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 
-export const formatDate = (date: Date) =>
-  date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+/** 'YYYY-MM-DD', the site's date format. */
+export const formatDate = (date: Date) => date.toISOString().slice(0, 10);

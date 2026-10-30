@@ -1,9 +1,9 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import { formatDate } from '../lib/writing';
+import { formatDate, type Post } from '../lib/writing';
+import UnlockForm from './UnlockForm.astro';
 
 interface Props {
-  posts: CollectionEntry<'writing'>[];
+  posts: Post[];
 }
 
 const { posts } = Astro.props;
@@ -11,14 +11,53 @@ const { posts } = Astro.props;
 
 <ul class="posts">
   {posts.map((post) => (
-    <li>
-      <a href={`/writing/${post.id}/`} class="title">{post.data.title}</a>
-      {post.data.draft && <span class="draft">Draft</span>}
+    <li data-locked={post.collection === 'locked' ? post.id : undefined}>
+      <div class="head">
+        <div>
+          <a href={`/writing/${post.id}/`} class="title">{post.data.title}</a>
+          {post.collection === 'locked' && (
+            <span class="tag" title="Passcode protected">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3"/></svg>
+              Locked
+            </span>
+          )}
+          {post.data.draft && <span class="tag">Draft</span>}
+        </div>
+        <time class="label" datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+      </div>
       <p class="description">{post.data.description}</p>
-      <time class="label" datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+      {post.collection === 'locked' && <UnlockForm id={`password-${post.id}`} hidden />}
     </li>
   ))}
 </ul>
+
+<script>
+  import { decrypt } from '../lib/crypto';
+  import { handleUnlock, rememberPassword } from '../lib/unlock';
+
+  // Locked posts ask for their password here, and only open once it's right.
+  for (const item of document.querySelectorAll<HTMLElement>('.posts li[data-locked]')) {
+    const slug = item.dataset.locked!;
+    const link = item.querySelector<HTMLAnchorElement>('a.title')!;
+    const form = item.querySelector('form')!;
+
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      form.hidden = !form.hidden;
+      if (!form.hidden) form.querySelector('input')!.focus();
+    });
+
+    handleUnlock(form, async (password) => {
+      // The encrypted post lives on its own page; check the password against it.
+      const page = new DOMParser().parseFromString(await (await fetch(link.href)).text(), 'text/html');
+      const { salt = '', iv = '', ciphertext = '' } = page.querySelector<HTMLElement>('locked-post')!.dataset;
+      if ((await decrypt({ salt, iv, ciphertext }, password)) === null) return false;
+      rememberPassword(slug, password);
+      location.href = link.href;
+      return true;
+    });
+  }
+</script>
 
 <style>
   .posts { list-style: none; }
@@ -29,6 +68,17 @@ const { posts } = Astro.props;
   }
 
   li:last-child { border-bottom: 1px solid var(--rule); }
+
+  /* Title on the left, date on the right; the date drops below on narrow screens. */
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    column-gap: 16px;
+  }
+
+  .head time { white-space: nowrap; }
 
   .title {
     font-family: var(--font-display);
@@ -41,9 +91,14 @@ const { posts } = Astro.props;
 
   .title:hover { color: var(--accent); }
 
-  .description { color: var(--muted); margin: 2px 0 6px; }
+  .description { color: var(--muted); margin-top: 2px; }
 
-  .draft {
+  .posts :global(.unlock) { margin-top: 14px; }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     margin-left: 8px;
     padding: 1px 8px;
     border-radius: 999px;
@@ -52,4 +107,6 @@ const { posts } = Astro.props;
     font-size: 12px;
     vertical-align: 3px;
   }
+
+  .tag svg { width: 11px; height: 11px; fill: currentColor; }
 </style>

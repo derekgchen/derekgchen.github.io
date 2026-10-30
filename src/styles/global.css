@@ -31,12 +31,15 @@ a:hover { text-decoration: underline; }
 
 /* External links (they open in a new tab) end in an arrow; the no-break space
    keeps it from wrapping onto its own line. Icon-only links (which carry an
-   aria-label instead of text) are left alone. */
+   aria-label instead of text) are left alone. Web links in blog posts count
+   too: they're set to open in a new tab once the page loads. */
 /* External link text is bold, except in the sidebar nav, where bold marks the
    current page. */
-a[target="_blank"]:not(nav a) { font-weight: 600; }
+a[target="_blank"]:not(nav a),
+.prose a[href^="http"] { font-weight: 600; }
 
-a[target="_blank"]:not([aria-label])::after {
+a[target="_blank"]:not([aria-label])::after,
+.prose a[href^="http"]::after {
   content: '\00a0↗';
   font-weight: 400;
 }

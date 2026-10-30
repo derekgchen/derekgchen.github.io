@@ -12,5 +12,5 @@ export const site = {
    * RSS link in page headers, and its pages ask search engines not to index
    * them, but /writing/ still works for anyone with the link.
    */
-  writingListed: false,
+  writingListed: true,
 };

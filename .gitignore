@@ -14,3 +14,6 @@ npm-debug.log*
 
 # macOS
 .DS_Store
+
+# locked posts: plaintext stays on this machine only
+private/

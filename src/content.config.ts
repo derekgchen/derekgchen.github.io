@@ -1,10 +1,12 @@
 import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { lockedLoader, publicLoader } from './lib/private-posts';
 
-// Blog posts: one Markdown file per post in src/content/writing/.
+// Posts are all written in private/writing/ (see lib/private-posts.ts).
+
+// Unlocked posts, copied into src/content/writing/.
 const writing = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/writing' }),
+  loader: publicLoader(),
   schema: z.object({
     title: z.string(),
     description: z.string(),
@@ -14,4 +16,18 @@ const writing = defineCollection({
   }),
 });
 
-export const collections = { writing };
+// Posts with a `password`, encrypted into src/content/locked/.
+const locked = defineCollection({
+  loader: lockedLoader(),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    date: z.coerce.date(),
+    draft: z.boolean().default(false),
+    salt: z.string(),
+    iv: z.string(),
+    ciphertext: z.string(),
+  }),
+});
+
+export const collections = { writing, locked };

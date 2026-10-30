@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import UnlockForm from '../../components/UnlockForm.astro';
 import { getPosts, formatDate } from '../../lib/writing';
 
 export async function getStaticPaths() {
@@ -9,7 +10,8 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const locked = post.collection === 'locked' ? post.data : null;
+const Content = post.collection === 'writing' ? (await render(post)).Content : null;
 ---
 
 <Layout title={post.data.title} description={post.data.description}>
@@ -21,11 +23,58 @@ const { Content } = await render(post);
       </p>
       <h1>{post.data.title}</h1>
     </header>
-    <div class="prose">
-      <Content />
-    </div>
+    {Content && <div class="prose"><Content /></div>}
+    {locked && (
+      <locked-post data-slug={post.id} data-salt={locked.salt} data-iv={locked.iv} data-ciphertext={locked.ciphertext}>
+        <UnlockForm id="password" autofocus />
+        <div class="prose" hidden></div>
+      </locked-post>
+    )}
   </article>
 </Layout>
+
+<script>
+  import { decrypt } from '../../lib/crypto';
+  import { handleUnlock, rememberPassword, rememberedPassword } from '../../lib/unlock';
+
+  // Web links in a post open in a new tab, like the rest of the site's outside links.
+  const openLinksInNewTab = (root: ParentNode) => {
+    for (const link of root.querySelectorAll<HTMLAnchorElement>('a[href^="http"]')) {
+      link.target = '_blank';
+      link.rel = 'noopener';
+    }
+  };
+  document.querySelectorAll('article > .prose').forEach(openLinksInNewTab);
+
+  class LockedPost extends HTMLElement {
+    async connectedCallback() {
+      const { slug = '', salt = '', iv = '', ciphertext = '' } = this.dataset;
+      const form = this.querySelector('form')!;
+      const prose = this.querySelector<HTMLElement>('.prose')!;
+
+      const open = async (password: string) => {
+        const html = await decrypt({ salt, iv, ciphertext }, password);
+        if (html === null) return false;
+        rememberPassword(slug, password);
+        prose.innerHTML = html;
+        openLinksInNewTab(prose);
+        prose.hidden = false;
+        form.remove();
+        return true;
+      };
+      handleUnlock(form, open);
+
+      // Unlocked from the Writing list: open straight away, without flashing the form.
+      const remembered = rememberedPassword(slug);
+      if (remembered) {
+        form.hidden = true;
+        if (!(await open(remembered))) form.hidden = false;
+      }
+    }
+  }
+
+  customElements.define('locked-post', LockedPost);
+</script>
 
 <style>
   header { margin-bottom: 40px; }
@@ -62,4 +111,26 @@ const { Content } = await render(post);
   .prose :global(pre code) { padding: 0; background: none; }
   .prose :global(img) { max-width: 100%; height: auto; border-radius: 6px; }
   .prose :global(hr) { border: none; border-top: 1px solid var(--rule); margin: 2.5em 0; }
+
+  /* Footnotes: [^1] in Markdown. Small numbers in the text, notes collected at the end. */
+  .prose :global(sup) { line-height: 0; }
+  .prose :global([data-footnote-ref]) { text-decoration: none; padding: 0 0.1em; }
+  .prose :global(.footnotes) {
+    margin-top: 3em;
+    padding-top: 1.2em;
+    border-top: 1px solid var(--rule);
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .prose :global(.footnotes h2) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .prose :global(.footnotes ol) { padding-left: 1.4em; }
+  .prose :global(.footnotes li + li) { margin-top: 0.5em; }
+  .prose :global(.data-footnote-backref) { text-decoration: none; }
 </style>
