@@ -90,6 +90,12 @@ export function lockedLoader(): Loader {
       };
       await sync();
       watchSources(context, root, sync);
+
+      // Deleting an encrypted copy (say, after a rename) should drop it in dev too.
+      const outDir = join(root, LOCKED_OUT);
+      context.watcher?.on('unlink', (path) => {
+        if (path.startsWith(outDir) && path.endsWith('.json')) loadEncrypted(context, outDir);
+      });
     },
   };
 }
