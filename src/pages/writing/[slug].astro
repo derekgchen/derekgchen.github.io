@@ -112,6 +112,45 @@ const Content = post.collection === 'writing' ? (await render(post)).Content : n
   .prose :global(img) { max-width: 100%; height: auto; border-radius: 6px; }
   .prose :global(hr) { border: none; border-top: 1px solid var(--rule); margin: 2.5em 0; }
 
+  /* Tables: scroll sideways on narrow screens instead of widening the page. */
+  .prose :global(table) {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    border-spacing: 0;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .prose :global(th), .prose :global(td) {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .prose :global(:is(th, td):not(:last-child)) { border-right: 1px solid var(--rule); }
+  .prose :global(tbody tr:last-child td) { border-bottom: none; }
+  .prose :global(th) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    color: var(--muted);
+    background: var(--bg-alt);
+    white-space: nowrap;
+  }
+  .prose :global(td:first-child) { font-weight: 600; white-space: nowrap; }
+  /* Centered columns hold marks (✓); keep them text glyphs and color them. */
+  .prose :global(td[style*="center"]) {
+    color: var(--accent);
+    font-weight: 600;
+    font-variant-emoji: text;
+    letter-spacing: 0.1em;
+  }
+  .prose :global(tbody tr:hover) { background: color-mix(in srgb, var(--bg-alt) 50%, transparent); }
+
   /* Footnotes: [^1] in Markdown. Small numbers in the text, notes collected at the end. */
   .prose :global(sup) { line-height: 0; }
   .prose :global([data-footnote-ref]) { text-decoration: none; padding: 0 0.1em; }
